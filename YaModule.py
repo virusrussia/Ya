@@ -120,12 +120,13 @@ class YaModule(object):
         get = requests.get(self.url+f"/{self.counterId}/logrequests",
                            headers={"Authorization": f'OAuth {self.token}'})
         for i in json.loads(get.text)["requests"]:
-            self.queries.loc[len(self.queries)] = [i['request_id'],
-                                                   i['source'],
-                                                   i['date1'],
-                                                   i['date2'],
-                                                   len(i['fields']),
-                                                   i['status']]
+            if i['request_id'] not in self.queries['request_id'].values:
+                self.queries.loc[len(self.queries)] = [i['request_id'],
+                                                       i['source'],
+                                                       i['date1'],
+                                                       i['date2'],
+                                                       len(i['fields']),
+                                                       i['status']]
         return self.queries
 
     def YaDelQuery(self, id):
@@ -160,8 +161,10 @@ class YaModule(object):
                            headers={"Authorization": f'OAuth {self.token}'})
 
         data = [x.split('\t') for x in get.content.decode('utf-8').split('\n')[:-1]]
+        
         df_ym = pd.DataFrame(data[1:],
-                             columns=self.df.loc[self.queries[
-                                                "request_id" == request_id],
-                                                "describe"])
+                             columns=(self.df.loc[
+                                 self.queries[
+                                     self.queries["request_id"]==int(request_id)]["source"],"describe"][:90]))
+
         return df_ym
